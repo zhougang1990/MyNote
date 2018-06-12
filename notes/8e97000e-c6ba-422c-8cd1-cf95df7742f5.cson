@@ -1,0 +1,104 @@
+createdAt: "2018-06-12T08:30:45.621Z"
+updatedAt: "2018-06-12T08:36:30.742Z"
+type: "SNIPPET_NOTE"
+folder: "3acfe59efd087551a1e7"
+title: "C# Bitmap Utility"
+description: '''
+  C# Bitmap Utility
+  
+'''
+snippets: [
+  {
+    name: "1.cs"
+    mode: "C#"
+    content: '''
+      public static class ImageUtility
+      {
+          public static BitmapSource ToBitmapSource(this Bitmap bitmap)
+          {
+              if (bitmap == null)
+              {
+                  return null;
+              }
+      
+              using (var source = (Bitmap)bitmap.Clone())
+              {
+                  var ptr = source.GetHbitmap(); // obtain the Hbitmap
+      
+                  try
+                  {
+                      var bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                          ptr,
+                          IntPtr.Zero,
+                          Int32Rect.Empty,
+                          BitmapSizeOptions.FromEmptyOptions());
+                      bs.Freeze();
+                      return bs;
+                  }
+                  finally
+                  {
+                      Gdi32Api.DeleteObject(ptr);
+                  }
+              }
+          }
+      
+        
+          public static BitmapImage ToBitmapImage(this Bitmap bitmap)
+          {
+              using (var memory = new MemoryStream())
+              {
+                  bitmap.Save(memory, ImageFormat.Png);
+                  memory.Position = 0;
+      
+                  var bitmapImage = new BitmapImage();
+                  bitmapImage.BeginInit();
+                  bitmapImage.StreamSource = memory;
+                  bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                  bitmapImage.EndInit();
+      
+                  return bitmapImage;
+              }
+          }
+        
+          public static BitmapImage ToBitmapImage(this byte[] array)
+          {
+              using (var stream = new MemoryStream(array))
+              {
+                  BitmapImage image = new BitmapImage();
+                  image.BeginInit();
+                  image.CacheOption = BitmapCacheOption.OnLoad;
+                  image.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                  image.StreamSource = stream;
+                  image.EndInit();
+                  return image;
+              }
+          }
+      
+          public static Bitmap ToBitmap(this BitmapImage bitmapImage)
+          {
+              using (MemoryStream outStream = new MemoryStream())
+              {
+                  BitmapEncoder enc = new BmpBitmapEncoder();
+                  enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                  enc.Save(outStream);
+                  Bitmap bitmap = new Bitmap(outStream);
+      
+                  return new Bitmap(bitmap);
+              }
+          }
+      
+          public static class Gdi32Api
+          {
+              [DllImport("gdi32.dll")]
+              [return: MarshalAs(UnmanagedType.Bool)]
+              public static extern bool DeleteObject([In] IntPtr hObject);
+          }
+      }
+    '''
+  }
+]
+tags: [
+  "C#"
+]
+isStarred: false
+isTrashed: false
