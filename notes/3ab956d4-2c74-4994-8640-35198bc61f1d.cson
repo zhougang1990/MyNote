@@ -1,0 +1,90 @@
+createdAt: "2018-05-23T01:27:07.404Z"
+updatedAt: "2018-06-12T08:14:28.458Z"
+type: "SNIPPET_NOTE"
+folder: "3acfe59efd087551a1e7"
+title: "Snippet note example"
+description: '''
+  Snippet note example
+  You can store a series of snippets as a single note, like Gist.
+'''
+snippets: [
+  {
+    name: "Zip.java"
+    mode: "Java"
+    content: '''
+          @Override
+          public InputStream batchDownload(String directory) {
+              String bucketName = this.sandboxConfig.getOssBucket();
+              ObjectListing objectListing = ossClient.listObjects(bucketName, directory);
+              List<OSSObjectSummary> objectsInDir = objectListing.getObjectSummaries();
+      
+              try
+              {
+                  PipedOutputStream pipedOut = new PipedOutputStream();
+                  PipedInputStream pipedIn = new PipedInputStream(pipedOut);
+                  ZipOutputStream zipOutputStream = new ZipOutputStream(pipedOut);
+      
+                  new Thread(() ->
+                  {
+                      ossLoop:
+                      for (OSSObjectSummary s : objectsInDir) {
+                          String objectKey = s.getKey();
+                          if (objectKey.endsWith("/")) {
+                              // Directory
+                              continue;
+                          }
+      
+                          String zipEntryName = StringUtils.substringAfter(objectKey, directory);
+      
+                          String[] parts = zipEntryName.split("/");
+                          for (String part: parts) {
+                              if (part.startsWith("_____")) {
+                                  continue ossLoop;
+                              }
+                          }
+      
+                          OSSObject object = ossClient.getObject(bucketName, objectKey);
+                          InputStream in = object.getObjectContent();
+                          BufferedInputStream bis = new BufferedInputStream(in);
+                          ZipEntry zipEntry = new ZipEntry(zipEntryName);
+                          try {
+      
+                              zipOutputStream.putNextEntry(zipEntry);
+      
+                              int count;
+                              byte data[] = new byte[1024];
+                              while ((count = bis.read(data, 0, 1024)) != -1) {
+                                  zipOutputStream.write(data, 0, count);
+                              }
+      
+                              bis.close();
+                          } catch (IOException e)
+                          {
+                              log.error(e.toString());
+                          }
+                      }
+      
+                      try {
+                          zipOutputStream.close();
+                      } catch (IOException e)
+                      {
+                          log.error(e.toString());
+                      }
+      
+                  }).start();
+      
+                  return pipedIn;
+              }
+              catch (IOException e)
+              {
+                  log.error(e.toString());
+              }
+      
+              return null;
+          }
+    '''
+  }
+]
+tags: []
+isStarred: false
+isTrashed: false
