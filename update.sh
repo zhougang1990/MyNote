@@ -8,5 +8,5 @@ timestamp() {
 
 git add .
 git commit -m "$(timestamp)"
-git pull origin master
+git pull --rebase origin master
 git push origin master    
